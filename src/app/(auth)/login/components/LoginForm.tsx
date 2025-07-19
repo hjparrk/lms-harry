@@ -23,8 +23,9 @@ export default function LoginForm() {
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 p-6 lg:p-8 shadow-sm">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
-                Contour Education
+            <h2 className="text-2xl font-semibold mb-8 text-center uppercase">
+                <span className="text-gray-900">Contour</span>
+                <span className="text-blue-500">TestPrep</span>
             </h2>
 
             <form action={handleSubmit} className="space-y-6">
