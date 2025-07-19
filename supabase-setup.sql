@@ -1,48 +1,33 @@
 -- LMS Database Setup for Supabase
 
+-- ========================================
+-- 1. ENUM CREATION
+-- ========================================
+
 -- Create user roles enum
 CREATE TYPE user_role AS ENUM ('student', 'instructor', 'admin');
+
+-- ========================================
+-- 2. TABLE CREATION
+-- ========================================
 
 -- User profiles table
 CREATE TABLE profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  email TEXT,
+  email TEXT UNIQUE,
   full_name TEXT,
   role user_role DEFAULT 'student' NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable RLS on profiles
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- Allow users to view and update their own profile
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Auto-create profile on user signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
 -- Courses table
 CREATE TABLE courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     description TEXT,
-    created_by UUID REFERENCES profiles(id),
     is_active BOOLEAN DEFAULT true,
+    total_lessons INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -75,6 +60,7 @@ CREATE TABLE enrollments (
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_accessed_lesson_id UUID REFERENCES lessons(id),
+    completed_lessons INTEGER DEFAULT 0,
     UNIQUE(student_id, course_id)
 );
 
@@ -86,6 +72,37 @@ CREATE TABLE lesson_completions (
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(student_id, lesson_id)
 );
+
+-- ========================================
+-- 3. FUNCTIONS AND TRIGGERS
+-- ========================================
+
+-- Auto-create profile on user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- ========================================
+-- 4. ROW LEVEL SECURITY (RLS) POLICIES
+-- ========================================
+
+-- Enable RLS on profiles
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to view and update their own profile
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = id);
 
 -- Enable RLS on courses and allow students to view enrolled courses only
 ALTER TABLE courses ENABLE ROW LEVEL SECURITY;

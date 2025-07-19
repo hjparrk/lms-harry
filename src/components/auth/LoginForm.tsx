@@ -1,6 +1,6 @@
 "use client";
 
-import { login } from "../actions";
+import { login } from "@/actions/auth";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { cn } from "@/utils/cn";
