@@ -39,7 +39,14 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Public Routes
+    // Public Routes - accessible to all users regardless of login status
+    const publicRoutes = ["/error", "/terms", "/privacy"];
+
+    if (publicRoutes.includes(request.nextUrl.pathname)) {
+        return supabaseResponse;
+    }
+
+    // Protected Routes - require authentication
     if (
         !user &&
         !request.nextUrl.pathname.startsWith("/login") &&
@@ -50,7 +57,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // Protected Routes
+    // Auth Routes - redirect logged-in users away from login
     if (user && request.nextUrl.pathname.startsWith("/login")) {
         const url = request.nextUrl.clone();
         url.pathname = "/";

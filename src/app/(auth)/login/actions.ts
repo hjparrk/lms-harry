@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
 import { loginSchema } from "@/types/auth";
-import { z } from "zod";
 
 export async function login(formData: FormData) {
     const supabase = await createClient();
@@ -18,8 +17,10 @@ export async function login(formData: FormData) {
     const validationResult = loginSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-        const errors = z.treeifyError(validationResult.error);
-        throw new Error(`Validation failed: ${JSON.stringify(errors)}`);
+        return {
+            success: false,
+            error: "Incorrect email or password.",
+        };
     }
 
     const { error } = await supabase.auth.signInWithPassword(
@@ -27,7 +28,10 @@ export async function login(formData: FormData) {
     );
 
     if (error) {
-        redirect("/error");
+        return {
+            success: false,
+            error: "Invalid email or password.",
+        };
     }
 
     revalidatePath("/", "layout");
