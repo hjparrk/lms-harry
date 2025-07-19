@@ -1,10 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
-import { loginSchema } from "@/types/auth";
+import { loginSchema } from "@/schemas/auth";
 
 export async function login(formData: FormData) {
     const supabase = await createClient();
@@ -34,7 +33,6 @@ export async function login(formData: FormData) {
         };
     }
 
-    revalidatePath("/", "layout");
     redirect("/");
 }
 
@@ -43,9 +41,11 @@ export async function logout() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-        throw new Error("An error occurred during logout");
+        return {
+            success: false,
+            error: "An error occurred during logout",
+        };
     }
 
-    revalidatePath("/", "layout");
-    redirect("/");
+    redirect("/login");
 }

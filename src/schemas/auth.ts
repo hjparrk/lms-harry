@@ -9,5 +9,3 @@ export const loginSchema = z.object({
         .min(6, "Password must be at least 6 characters")
         .min(1, "Password is required"),
 });
-
-export type LoginInput = z.infer<typeof loginSchema>;
