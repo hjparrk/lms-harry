@@ -1,10 +1,10 @@
 import { getUser } from "@/lib/users";
-import { getUserCourses } from "@/lib/courses";
+import { getCourses } from "@/lib/courses";
 import CourseCard from "@/components/dashboard/CourseCard";
 
 export default async function DashboardPage() {
     const user = await getUser();
-    const coursesResult = await getUserCourses(user.id);
+    const coursesResult = await getCourses(user.id);
 
     if (!coursesResult.success) {
         return (

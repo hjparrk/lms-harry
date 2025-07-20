@@ -97,20 +97,26 @@ export type Database = {
                 Row: {
                     completed_at: string | null;
                     id: string;
+                    is_completed: boolean | null;
                     lesson_id: string;
                     student_id: string;
+                    updated_at: string | null;
                 };
                 Insert: {
                     completed_at?: string | null;
                     id?: string;
+                    is_completed?: boolean | null;
                     lesson_id: string;
                     student_id: string;
+                    updated_at?: string | null;
                 };
                 Update: {
                     completed_at?: string | null;
                     id?: string;
+                    is_completed?: boolean | null;
                     lesson_id?: string;
                     student_id?: string;
+                    updated_at?: string | null;
                 };
                 Relationships: [
                     {

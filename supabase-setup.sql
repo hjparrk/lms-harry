@@ -69,7 +69,9 @@ CREATE TABLE lesson_completions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    is_completed BOOLEAN DEFAULT true,
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(student_id, lesson_id)
 );
 
@@ -163,5 +165,6 @@ CREATE POLICY "Students can insert own lesson completions" ON lesson_completions
     WITH CHECK (student_id = auth.uid());
 CREATE POLICY "Students can update own lesson completions" ON lesson_completions
     FOR UPDATE 
-    USING (student_id = auth.uid());
+    USING (student_id = auth.uid())
+    WITH CHECK (student_id = auth.uid());
 

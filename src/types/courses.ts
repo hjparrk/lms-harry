@@ -1,5 +1,7 @@
 // Course-related interfaces and types
 
+import { ReactNode } from "react";
+
 export interface UserCourseWithProgress {
     id: string;
     title: string;
@@ -39,4 +41,35 @@ export interface EnrollmentWithCourse {
     course_id: string;
     courses: CourseData;
     lessons?: LessonData | null;
+}
+
+export interface CourseStructure {
+    id: string;
+    title: string;
+    description: string | null;
+    sections: SectionStructure[];
+}
+
+export interface SectionStructure {
+    id: string;
+    title: string;
+    order_index: number;
+    lessons: LessonStructure[];
+}
+
+export interface LessonStructure {
+    id: string;
+    title: string;
+    order_index: number;
+    is_completed: boolean;
+}
+
+export interface CourseContextType {
+    course: CourseStructure;
+    updateLessonCompletion: (lessonId: string, isCompleted: boolean) => void;
+}
+
+export interface CourseProviderProps {
+    children: ReactNode;
+    initialCourse: CourseStructure;
 }

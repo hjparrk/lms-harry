@@ -3,10 +3,11 @@ import {
     UserCourseWithProgress,
     EnrollmentWithCourse,
     LessonData,
+    CourseStructure,
 } from "@/types/courses";
 import { Result } from "@/types/common";
 
-export async function getUserCourses(
+export async function getCourses(
     userId: string
 ): Promise<Result<UserCourseWithProgress[]>> {
     const supabase = await createClient();
@@ -136,8 +137,6 @@ export async function updateLastAccessedLesson(
         .eq("student_id", userId)
         .eq("course_id", courseId);
 
-    console.log("Error : ", error);
-
     if (error) {
         return {
             success: false,
@@ -147,3 +146,127 @@ export async function updateLastAccessedLesson(
 
     return { success: true, data: undefined };
 }
+
+export async function getCourseStructure(
+    courseId: string,
+    userId: string
+): Promise<Result<CourseStructure>> {
+    const supabase = await createClient();
+
+    // First, get course basic info
+    const { data: enrollment, error: enrollmentError } = await supabase
+        .from("enrollments")
+        .select(
+            `
+            courses!inner (
+                id,
+                title,
+                description
+            )
+        `
+        )
+        .eq("course_id", courseId)
+        .eq("student_id", userId)
+        .single();
+
+    if (enrollmentError || !enrollment) {
+        return { success: false, error: "Course not found or not enrolled" };
+    }
+
+    // Ensure to have one course per
+    const course = Array.isArray(enrollment.courses)
+        ? enrollment.courses[0]
+        : enrollment.courses;
+
+    // Get sections with lessons and completion status
+    const { data: sections, error: sectionsError } = await supabase
+        .from("sections")
+        .select(
+            `
+            id,
+            title,
+            order_index,
+            lessons (
+                id,
+                title,
+                order_index
+            )
+        `
+        )
+        .eq("course_id", courseId)
+        .order("order_index", { ascending: true });
+
+    if (sectionsError) {
+        return { success: false, error: "Failed to fetch course structure" };
+    }
+
+    // Get completed lessons for this user
+    const { data: completions, error: completionsError } = await supabase
+        .from("lesson_completions")
+        .select("lesson_id, is_completed")
+        .eq("student_id", userId)
+        .eq("is_completed", true);
+
+    if (completionsError) {
+        return { success: false, error: "Failed to fetch completion data" };
+    }
+
+    const completedLessonIds = new Set(
+        completions?.map((c) => c.lesson_id) || []
+    );
+
+    // Transform the data structure
+    const structuredSections = (sections || []).map((section) => ({
+        id: section.id,
+        title: section.title,
+        order_index: section.order_index,
+        lessons: (section.lessons || [])
+            .sort((a, b) => a.order_index - b.order_index)
+            .map((lesson) => ({
+                id: lesson.id,
+                title: lesson.title,
+                order_index: lesson.order_index,
+                is_completed: completedLessonIds.has(lesson.id),
+            })),
+    }));
+
+    return {
+        success: true,
+        data: {
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            sections: structuredSections,
+        },
+    };
+}
+
+export async function getLessonCompletionStatus(
+    userId: string,
+    lessonId: string
+): Promise<Result<boolean>> {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("lesson_completions")
+        .select("is_completed")
+        .eq("student_id", userId)
+        .eq("lesson_id", lessonId)
+        .single();
+
+    // Error code PGRST116 == "No rows found"
+    if (error && error.code !== "PGRST116") {
+        return {
+            success: false,
+            error: "Failed to fetch lesson completion status",
+        };
+    }
+
+    // If no record exists, lesson is not completed
+    if (!data) {
+        return { success: true, data: false };
+    }
+
+    return { success: true, data: data.is_completed };
+}
+
