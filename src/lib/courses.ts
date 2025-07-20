@@ -1,5 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
-import { UserCourseWithProgress, EnrollmentWithCourse, LessonData } from "@/types/courses";
+import {
+    UserCourseWithProgress,
+    EnrollmentWithCourse,
+    LessonData,
+} from "@/types/courses";
 import { Result } from "@/types/common";
 
 export async function getUserCourses(
@@ -38,35 +42,40 @@ export async function getUserCourses(
         return { success: true, data: [] };
     }
 
-    const courses = (enrollments as EnrollmentWithCourse[]).map((enrollment) => {
-        const course = enrollment.courses;
-        const completedLessons = enrollment.completed_lessons || 0;
-        const totalLessons = course.total_lessons || 0;
+    const courses = (enrollments as EnrollmentWithCourse[]).map(
+        (enrollment) => {
+            const course = enrollment.courses;
+            const completedLessons = enrollment.completed_lessons || 0;
+            const totalLessons = course.total_lessons || 0;
 
-        const progress =
-            totalLessons > 0
-                ? Math.round((completedLessons / totalLessons) * 100 * 100) /
-                  100
-                : 0;
+            const progress =
+                totalLessons > 0
+                    ? Math.round(
+                          (completedLessons / totalLessons) * 100 * 100
+                      ) / 100
+                    : 0;
 
-        return {
-            id: course.id,
-            title: course.title,
-            description: course.description,
-            total_lessons: totalLessons,
-            completed_lessons: completedLessons,
-            progress,
-            enrolled_at: enrollment.enrolled_at,
-            last_accessed_lesson_id: enrollment.last_accessed_lesson_id,
-            last_accessed_lesson_title: enrollment.lessons?.title || null,
-            is_active: course.is_active,
-        };
-    });
+            return {
+                id: course.id,
+                title: course.title,
+                description: course.description,
+                total_lessons: totalLessons,
+                completed_lessons: completedLessons,
+                progress,
+                enrolled_at: enrollment.enrolled_at,
+                last_accessed_lesson_id: enrollment.last_accessed_lesson_id,
+                last_accessed_lesson_title: enrollment.lessons?.title || null,
+                is_active: course.is_active,
+            };
+        }
+    );
 
     return { success: true, data: courses };
 }
 
-export async function getFirstLessonId(courseId: string): Promise<Result<string>> {
+export async function getFirstLessonId(
+    courseId: string
+): Promise<Result<string>> {
     const supabase = await createClient();
 
     const { data: firstSection, error: sectionError } = await supabase
@@ -96,7 +105,9 @@ export async function getFirstLessonId(courseId: string): Promise<Result<string>
     return { success: true, data: firstLesson.id };
 }
 
-export async function getLessonById(lessonId: string): Promise<Result<LessonData>> {
+export async function getLessonById(
+    lessonId: string
+): Promise<Result<LessonData>> {
     const supabase = await createClient();
 
     const { data: lesson, error } = await supabase
@@ -110,4 +121,29 @@ export async function getLessonById(lessonId: string): Promise<Result<LessonData
     }
 
     return { success: true, data: lesson };
+}
+
+export async function updateLastAccessedLesson(
+    userId: string,
+    courseId: string,
+    lessonId: string
+): Promise<Result<void>> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from("enrollments")
+        .update({ last_accessed_lesson_id: lessonId })
+        .eq("student_id", userId)
+        .eq("course_id", courseId);
+
+    console.log("Error : ", error);
+
+    if (error) {
+        return {
+            success: false,
+            error: "Failed to update last accessed lesson",
+        };
+    }
+
+    return { success: true, data: undefined };
 }

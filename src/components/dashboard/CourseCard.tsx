@@ -102,7 +102,7 @@ export default async function CourseCard({ course }: CourseCardProps) {
                         <div className="flex items-center gap-2 mb-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                             <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                                Continue from
+                                Last Lesson
                             </span>
                         </div>
                         <p className="text-sm font-semibold text-gray-900">
@@ -126,7 +126,7 @@ export default async function CourseCard({ course }: CourseCardProps) {
 
             {/* Continue Button */}
             {lessonId ? (
-                <Link href={`/courses/${courseId}/lectures/${lessonId}`}>
+                <Link href={`/courses/${courseId}/lessons/${lessonId}`}>
                     <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group-hover:scale-[1.02]">
                         Continue Learning
                     </button>

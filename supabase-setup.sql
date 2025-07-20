@@ -122,6 +122,12 @@ CREATE POLICY "Students can view own enrollments" ON enrollments
     FOR SELECT 
     USING (student_id = auth.uid());
 
+-- Allow students to update their own enrollment progress (last_accessed_lesson_id, completed_lessons)
+CREATE POLICY "Students can update their own enrollments" ON enrollments
+    FOR UPDATE 
+    USING (student_id = auth.uid())
+    WITH CHECK (student_id = auth.uid());
+
 -- Enable RLS on sections and allow students to view sections of enrolled courses only
 ALTER TABLE sections ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Students can view sections of enrolled courses" ON sections
@@ -158,3 +164,4 @@ CREATE POLICY "Students can insert own lesson completions" ON lesson_completions
 CREATE POLICY "Students can update own lesson completions" ON lesson_completions
     FOR UPDATE 
     USING (student_id = auth.uid());
+

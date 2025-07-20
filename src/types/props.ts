@@ -10,9 +10,9 @@ export interface HeaderProps {
     fullName: string;
 }
 
-export interface LecturePageProps {
+export interface LessonPageProps {
     params: Promise<{
         courseId: string;
-        lectureId: string;
+        lessonId: string;
     }>;
 }
