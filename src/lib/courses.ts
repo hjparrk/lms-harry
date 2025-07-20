@@ -1,9 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
-import { UserCourseWithProgress, EnrollmentWithCourse } from "@/types/courses";
+import { UserCourseWithProgress, EnrollmentWithCourse, LessonData } from "@/types/courses";
+import { Result } from "@/types/common";
 
 export async function getUserCourses(
     userId: string
-): Promise<UserCourseWithProgress[]> {
+): Promise<Result<UserCourseWithProgress[]>> {
     const supabase = await createClient();
 
     const { data: enrollments, error } = await supabase
@@ -30,14 +31,14 @@ export async function getUserCourses(
         .order("enrolled_at", { ascending: false });
 
     if (error) {
-        throw new Error("Failed to fetch user courses");
+        return { success: false, error: "Failed to fetch user courses" };
     }
 
     if (!enrollments) {
-        return [];
+        return { success: true, data: [] };
     }
 
-    return (enrollments as EnrollmentWithCourse[]).map((enrollment) => {
+    const courses = (enrollments as EnrollmentWithCourse[]).map((enrollment) => {
         const course = enrollment.courses;
         const completedLessons = enrollment.completed_lessons || 0;
         const totalLessons = course.total_lessons || 0;
@@ -61,4 +62,52 @@ export async function getUserCourses(
             is_active: course.is_active,
         };
     });
+
+    return { success: true, data: courses };
+}
+
+export async function getFirstLessonId(courseId: string): Promise<Result<string>> {
+    const supabase = await createClient();
+
+    const { data: firstSection, error: sectionError } = await supabase
+        .from("sections")
+        .select("id")
+        .eq("course_id", courseId)
+        .order("order_index", { ascending: true })
+        .limit(1)
+        .single();
+
+    if (sectionError || !firstSection) {
+        return { success: false, error: "No sections found in course" };
+    }
+
+    const { data: firstLesson, error: lessonError } = await supabase
+        .from("lessons")
+        .select("id")
+        .eq("section_id", firstSection.id)
+        .order("order_index", { ascending: true })
+        .limit(1)
+        .single();
+
+    if (lessonError || !firstLesson) {
+        return { success: false, error: "No lessons found in course" };
+    }
+
+    return { success: true, data: firstLesson.id };
+}
+
+export async function getLessonById(lessonId: string): Promise<Result<LessonData>> {
+    const supabase = await createClient();
+
+    const { data: lesson, error } = await supabase
+        .from("lessons")
+        .select("id, title, content, content_type")
+        .eq("id", lessonId)
+        .single();
+
+    if (error) {
+        return { success: false, error: "Failed to fetch lesson" };
+    }
+
+    return { success: true, data: lesson };
 }

@@ -9,3 +9,10 @@ export interface CourseCardProps {
 export interface HeaderProps {
     fullName: string;
 }
+
+export interface LecturePageProps {
+    params: Promise<{
+        courseId: string;
+        lectureId: string;
+    }>;
+}

@@ -26,6 +26,8 @@ export interface CourseData {
 export interface LessonData {
     id: string;
     title: string;
+    content: string | null;
+    content_type: string | null;
 }
 
 export interface EnrollmentWithCourse {
