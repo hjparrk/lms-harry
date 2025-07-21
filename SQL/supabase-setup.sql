@@ -167,4 +167,3 @@ CREATE POLICY "Students can update own lesson completions" ON lesson_completions
     FOR UPDATE 
     USING (student_id = auth.uid())
     WITH CHECK (student_id = auth.uid());
-

@@ -52,8 +52,8 @@ export async function getCourses(
             const progress =
                 totalLessons > 0
                     ? Math.round(
-                          (completedLessons / totalLessons) * 100 * 100
-                      ) / 100
+                          (completedLessons / totalLessons) * 100
+                      )
                     : 0;
 
             return {
